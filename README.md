@@ -1,3 +1,10 @@
+# Projet Secret Hitler
+
+## Comment lancer le jeu
+1. Téléchargez le fichier `index.html` de ce dépôt.
+2. Ouvrez ce fichier avec n'importe quel navigateur web moderne (Chrome, Firefox, Edge).
+3. Le jeu se lance automatiquement (pensez à activer le son !).
+
 
 ## Fonctionnalités IA (Optionnelles)
 
