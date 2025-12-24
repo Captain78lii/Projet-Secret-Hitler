@@ -31,7 +31,7 @@ Pour tester les fonctionnalités d'IA, vous pouvez générer une clé gratuite e
 3. Copiez la clé et collez-la dans le jeu.
 
 
-Ce dépôt GitHub contient :
+#### Ce dépôt GitHub contient :
 
 📁 rapport/
 - le fichier rapport.tex
