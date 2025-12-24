@@ -29,3 +29,19 @@ Pour tester les fonctionnalités d'IA, vous pouvez générer une clé gratuite e
 1. Connectez-vous avec un compte Google.
 2. Cliquez sur "Create API Key".
 3. Copiez la clé et collez-la dans le jeu.
+
+
+Ce dépôt GitHub contient :
+
+📁 rapport/
+- le fichier rapport.tex
+- 48 images (captures d’écran utilisées dans le rapport)
+
+💻 Code source du projet
+index.html : fichier principal permettant de lancer le jeu
+
+📄 README.md (optionnel)
+Instructions pour exécuter le projet et comprendre son fonctionnement
+
+📕 Rapport au format PDF (optionnel)
+L2_rapport_Turkan_Bouydarne.pdf : version compilée du rapport final 
