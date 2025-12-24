@@ -35,7 +35,7 @@ Pour tester les fonctionnalités d'IA, vous pouvez générer une clé gratuite e
 
 📁 rapport/
 - le fichier rapport.tex
-- 48 images (captures d’écran utilisées dans le rapport)
+- 48 images (png, jpg)
 
 💻 Code source du projet
 index.html : fichier principal permettant de lancer le jeu
