@@ -4,29 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secret Hitler - Édition Interactive</title>
-   
+    
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-   
+    
     <script src="https://cdn.tailwindcss.com"></script>
-   
+    
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Courier+Prime:wght@400;700&family=Old+Standard+TT:wght@700&display=swap" rel="stylesheet">
 
     <style>
         body { background-color: #101010; color: #ecf0f1; font-family: 'Courier Prime', monospace; overflow: hidden; user-select: none; }
         .font-title { font-family: 'Anton', sans-serif; }
-       
+        
         /* Animations */
         .vote-badge-enter { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         .announcement-enter { animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-       
+        
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
         .timer-pulse { animation: pulse-red 1s infinite; }
-       
+        
         @keyframes startPulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
         .animate-start { animation: startPulse 2s infinite; }
 
@@ -343,7 +343,7 @@
                 </svg>
             );
         };
-       
+        
         const PassScreen = ({ nextPlayerName, onReady }) => (
             <div className="pass-screen fade-in">
                 <div className="text-white text-4xl font-title mb-8 tracking-widest">TOUR DE {nextPlayerName.toUpperCase()}</div>
@@ -466,6 +466,9 @@
             };
 
             const handleNomination = (targetId) => {
+                // MODIF : Empêcher le clic en mode spectateur
+                if (mode === "SPECTATOR" || !players[presidentId]?.isHuman) return;
+
                 if (targetId === presidentId || !players[targetId].isAlive) return;
                 announce("VOTRE CHOIX", `Vous proposez\n${players[targetId].name.toUpperCase()}\ncomme Chancelier`, "", () => {
                      setChancellorId(targetId);
@@ -657,7 +660,7 @@
                     resolveVotes(votesMap);
                 }
             };
-           
+            
             const getAdvice = () => {
                 const myRole = players[0].role;
                 if (myRole === "Liberal") {
@@ -717,7 +720,13 @@
                     roles = shuffleArray(rolesPool);
                 }
                 const newPlayers = roles.map((r, i) => ({
-                    id: i, name: gameMode === "SOLO" && i === 0 ? "MOI" : `Joueur ${i + 1}`, role: r, isAlive: true, isHuman: gameMode === "MULTI" || (gameMode === "SOLO" && i === 0), lastVote: null
+                    id: i, 
+                    name: gameMode === "SOLO" && i === 0 ? "MOI" : `Joueur ${i + 1}`, 
+                    role: r, 
+                    isAlive: true, 
+                    // MODIF : En SPECTATEUR, tout le monde est 'Bot' (isHuman: false), même le joueur 0
+                    isHuman: gameMode === "MULTI" || (gameMode === "SOLO" && i === 0), 
+                    lastVote: null
                 }));
                 const matrix = Array(playerCount).fill(0).map(() => Array(playerCount).fill(0));
                 newPlayers.forEach((p1, i) => {
@@ -740,7 +749,7 @@
                 setShowMultiSetup(false);
                 if (gameMode === "MULTI") { setShowPassScreen(true); setGameState("ROLE_REVEAL"); } else { setGameState("NOMINATION"); audioMgr.play("smash"); }
             };
-           
+            
             useEffect(() => {
                 if (gameState === "GAME_OVER" || mode === "MENU" || mode === "ROLE_REVEAL" || mode === "SPECTATOR" || mode === "MULTI" || mode === "ROLE_ROULETTE" || notification || mode === "START") {
                     setIsTimerRunning(false); return;
@@ -781,7 +790,13 @@
                              setChancellorId(choice.id); addLog(`${players[presidentId].name} propose ${choice.name} comme Chancelier.`); audioMgr.play("smash"); setGameState("VOTE");
                         }, 5000);
                     }
-                    else if (gameState === "VOTE" && mode === "SPECTATOR") { await new Promise(r => setTimeout(r, 4000)); simulateSpectatorVotes(); }
+                    else if (gameState === "VOTE" && (mode === "SPECTATOR" || !players[0].lastVote)) { 
+                        // MODIF: Si spectateur, on déclenche les votes automatiques
+                        if (mode === "SPECTATOR") {
+                             await new Promise(r => setTimeout(r, 4000)); 
+                             simulateSpectatorVotes(); 
+                        }
+                    }
                     else if (gameState === "LEG_PRES" && isPresBot) { await new Promise(r => setTimeout(r, 4000)); handleDiscard(0); }
                     else if (gameState === "LEG_CHAN" && isChanBot) { await new Promise(r => setTimeout(r, 4000)); const bot = players[chancellorId]; let pick = 0; if (bot.role === 'Liberal' && hand.includes('Liberal')) pick = hand.indexOf('Liberal'); else if (bot.role !== 'Liberal' && hand.includes('Fascist')) pick = hand.indexOf('Fascist'); handleEnact(pick); }
                 };
@@ -870,7 +885,7 @@
                          <div className="flex gap-8 perspective-1000">
                              {["Liberal", "Fascist", "Hitler"].map((r, i) => (
                                  <div key={i} className={`w-32 h-48 bg-gray-700 rounded-lg border-4 border-white shadow-2xl flex items-center justify-center text-4xl transform transition-all duration-500 ${rouletteState === 'SPINNING' ? 'animate-shuffle' : (r === revealedRole ? 'scale-110 z-50 animate-drop-in' : 'opacity-20 scale-75 blur-sm')}`}>
-                                           {rouletteState === 'SPINNING' ? '❓' : (r === revealedRole ? (r === 'Liberal' ? '🕊️' : (r === 'Hitler' ? '👿' : '🐍')) : '')}
+                                             {rouletteState === 'SPINNING' ? '❓' : (r === revealedRole ? (r === 'Liberal' ? '🕊️' : (r === 'Hitler' ? '👿' : '🐍')) : '')}
                                  </div>
                              ))}
                          </div>
@@ -885,7 +900,7 @@
             }
 
             if (showPassScreen && mode === "MULTI") return <PassScreen nextPlayerName={players[activePlayerId].name} onReady={() => setShowPassScreen(false)} />;
-           
+            
             if (gameState === "ROLE_REVEAL" && mode === "MULTI") {
                  return (
                     <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
@@ -906,11 +921,11 @@
                                          setShowPassScreen(true);
                                     }
                                     else {
-                                        setGameState("NOMINATION");
-                                        setActivePlayerId(0);
-                                        setShowPassScreen(false);
-                                        addLog("La partie commence !");
-                                        audioMgr.play("smash");
+                                         setGameState("NOMINATION");
+                                         setActivePlayerId(0);
+                                         setShowPassScreen(false);
+                                         addLog("La partie commence !");
+                                         audioMgr.play("smash");
                                     }
                                 }
                             }} className="bg-white text-black font-bold py-3 px-8 rounded hover:bg-gray-200">
@@ -971,9 +986,9 @@
                                     {notification.sub}
                                  </div>
                                  {notification.details && (
-                                     <div className="text-sm text-gray-400 italic">
+                                    <div className="text-sm text-gray-400 italic">
                                          {notification.details}
-                                     </div>
+                                    </div>
                                  )}
                             </div>
                         </div>
@@ -1015,10 +1030,11 @@
                                                     <button onMouseEnter={() => audioMgr.play('flip')} onClick={() => { audioMgr.play('ding'); handleVote("NEIN"); }} className="bg-red-600 px-6 py-2 rounded text-white font-bold transition transform hover:scale-105">NEIN!</button>
                                                 </>
                                             )}
-                                            {gameState === "LEG_PRES" && presidentId === 0 && hand.map((c, i) => (
+                                            {/* MODIF : Ajout de la vérification isHuman pour n'afficher les cartes QUE si c'est un humain */}
+                                            {gameState === "LEG_PRES" && players[presidentId]?.isHuman && hand.map((c, i) => (
                                                 <div key={i} onMouseEnter={() => audioMgr.play('flip')} onClick={() => handleDiscard(i)} className={`cursor-pointer w-16 h-24 rounded border flex items-center justify-center hover:-translate-y-2 transition ${c==='Liberal'?'bg-blue-600':'bg-red-700'}`}>{c==="Liberal"?"🕊️":"🐍"}</div>
                                             ))}
-                                            {gameState === "LEG_CHAN" && chancellorId === 0 && hand.map((c, i) => (
+                                            {gameState === "LEG_CHAN" && players[chancellorId]?.isHuman && hand.map((c, i) => (
                                                 <div key={i} onMouseEnter={() => audioMgr.play('flip')} onClick={() => handleEnact(i)} className={`cursor-pointer w-16 h-24 rounded border flex items-center justify-center hover:-translate-y-2 transition ${c==='Liberal'?'bg-blue-600':'bg-red-700'}`}>{c==="Liberal"?"🕊️":"🐍"}</div>
                                             ))}
                                     </div>
@@ -1101,7 +1117,10 @@
                                 } else {
                                     if (p.id === activePlayerId) showRole = true;
                                 }
-                                const isTarget = (gameState === "NOMINATION" && presidentId === activePlayerId && i !== activePlayerId && p.isAlive);
+                                
+                                // MODIF : isTarget n'est vrai que si c'est le tour d'un humain (sinon pas de clic)
+                                const isHumanTurn = players[presidentId]?.isHuman;
+                                const isTarget = (gameState === "NOMINATION" && presidentId === activePlayerId && i !== activePlayerId && p.isAlive && isHumanTurn && mode !== "SPECTATOR");
 
                                 return (
                                     <div key={i} onClick={() => { if(isTarget) { audioMgr.play('ding'); handleNomination(p.id); } }} className={`absolute w-24 flex flex-col items-center z-20 transition ${isTarget ? "cursor-pointer hover:scale-110 brightness-125" : ""}`} style={{left, top}}>
