@@ -8,30 +8,41 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+   
     <script src="https://cdn.tailwindcss.com"></script>
+   
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Courier+Prime:wght@400;700&family=Old+Standard+TT:wght@700&display=swap" rel="stylesheet">
 
     <style>
         body { background-color: #101010; color: #ecf0f1; font-family: 'Courier Prime', monospace; overflow: hidden; user-select: none; }
         .font-title { font-family: 'Anton', sans-serif; }
-        .transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .card-hover:hover { transform: translateY(-20px) scale(1.1) rotate(2deg); box-shadow: 0 20px 40px rgba(0,0,0,0.8); z-index: 50; }
-        .trust-link { filter: drop-shadow(0 0 3px currentColor); mix-blend-mode: screen; pointer-events: none; transition: d 1s ease; }
-        .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); }
-        .newspaper { background: #fdf1d6; color: #1a1a1a; box-shadow: 0 0 50px rgba(0,0,0,0.9); transform: rotate(-1deg); }
+       
+        /* Animations */
         .vote-badge-enter { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .announcement-enter { animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+       
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .timer-pulse { animation: pulse-red 1s infinite; }
+       
+        @keyframes startPulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        .animate-start { animation: startPulse 2s infinite; }
+
         .perspective-1000 { perspective: 1000px; }
         .animate-shuffle { animation: shuffleMove 0.5s infinite linear; }
         @keyframes shuffleMove { 0% { transform: translateX(0) scale(1); z-index: 1; } 25% { transform: translateX(100px) scale(0.9); z-index: 0; } 50% { transform: translateX(0) scale(0.8); z-index: -1; } 75% { transform: translateX(-100px) scale(0.9); z-index: 0; } 100% { transform: translateX(0) scale(1); z-index: 1; } }
         .animate-drop-in { animation: dropInCard 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes dropInCard { 0% { transform: translateY(-500px) scale(0.1) rotate(720deg); opacity: 0; } 70% { transform: translateY(20px) scale(1.2) rotate(-10deg); opacity: 1; } 100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; } }
-        .announcement-enter { animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        .timer-pulse { animation: pulse-red 1s infinite; }
-        @keyframes startPulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-        .animate-start { animation: startPulse 2s infinite; }
+
+        .newspaper { background: #fdf1d6; color: #1a1a1a; box-shadow: 0 0 50px rgba(0,0,0,0.9); transform: rotate(-1deg); }
+        
+        /* Scrollbar pour les règles */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #666; }
     </style>
 </head>
 <body>
@@ -40,23 +51,20 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
+        // --- CONSTANTE API ---
         const API_KEY = ""; 
 
+        // --- AUDIO ---
         const BACKGROUND_MUSIC_URL = "https://ia800300.us.archive.org/17/items/MetalGearSolidOriginalGameSoundtrack/20%20-%20Game%20Over.mp3";
-
         const SOUNDS = {
             flip: "https://www.myinstants.com/media/sounds/card-flip.mp3",
-            slide: "https://www.myinstants.com/media/sounds/card-shuffle.mp3",
             smash: "https://www.myinstants.com/media/sounds/gavel.mp3",
             win_lib: "https://www.myinstants.com/media/sounds/final-fantasy-vii-victory-fanfare.mp3",
             win_fas: "https://www.myinstants.com/media/sounds/imperial_march.mp3",
             fail: "https://www.myinstants.com/media/sounds/wrong-answer-sound-effect.mp3",
-            success_short: "https://www.myinstants.com/media/sounds/success-sound-effect.mp3",
-            radio: "https://www.myinstants.com/media/sounds/static-noise.mp3",
             ding: "https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3",
-            boom: "https://www.myinstants.com/media/sounds/vine-boom.mp3",
-            shot: "https://www.myinstants.com/media/sounds/gun-shot.mp3",
-            power_down: "https://www.myinstants.com/media/sounds/pacman-die.mp3"
+            power_down: "https://www.myinstants.com/media/sounds/pacman-die.mp3",
+            slide: "https://www.myinstants.com/media/sounds/card-shuffle.mp3"
         };
 
         class AudioManager {
@@ -69,10 +77,10 @@
                 if (this.isInitialized) return;
                 this.bgm = new Audio(BACKGROUND_MUSIC_URL);
                 this.bgm.loop = true;
-                this.bgm.volume = 0.4;
+                this.bgm.volume = 0.3;
                 Object.keys(SOUNDS).forEach(key => {
                     const s = new Audio(SOUNDS[key]);
-                    s.volume = 1.0;
+                    s.volume = 0.5; 
                     s.onerror = () => { this.sounds[key] = null; };
                     this.sounds[key] = s;
                 });
@@ -85,37 +93,31 @@
                 if (sound) {
                     try {
                         sound.currentTime = 0;
-                        if (key === 'power_down') {
-                            sound.volume = 1.0;
-                            sound.playbackRate = 0.5;
-                        } else if (key.startsWith('win')) {
-                            sound.volume = 0.6;
-                            sound.playbackRate = 1.0;
-                        } else {
-                            sound.volume = 0.4;
-                            sound.playbackRate = 1.0;
-                        }
-                        const p = sound.play();
-                        if (p !== undefined) { p.catch(e => {}); }
+                        sound.volume = key.startsWith('win') ? 0.6 : 0.4;
+                        sound.play().catch(e => {});
                     } catch (e) {}
                 }
             }
         }
         const audioMgr = new AudioManager();
 
-        const COLORS = {
-            Liberal: "#3498db", Fascist: "#e74c3c", Hitler: "#8e44ad",
-            Alliance: "#27ae60", Sympathy: "#58d68d", Suspicion: "#e67e22", Conflict: "#c0392b"
+        // --- ICONS (VERSION ORIGINALE MAIS CORRIGÉE POUR EVITER LE CRASH) ---
+        // J'utilise <g> (groupe) au lieu de React.Fragment (<>...</>) qui causait l'écran noir.
+        const Icon = ({ path, color="currentColor", size=24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{path}</svg>
+        );
+        const Icons = {
+            Bulb: () => <Icon color="#facc15" path={<path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/>} />,
+            X: () => <Icon color="#ef4444" path={<path d="M18 6 6 18M6 6l12 12"/>} />,
+            Book: () => <Icon path={<g><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></g>} />,
+            Radio: () => <Icon path={<g><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></g>} />,
+            Sparkles: () => <Icon color="#facc15" path={<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/>} />
         };
 
+        // --- DATA ---
+        const COLORS = { Liberal: "#3498db", Fascist: "#e74c3c", Hitler: "#8e44ad", Alliance: "#27ae60", Sympathy: "#58d68d", Suspicion: "#e67e22", Conflict: "#c0392b" };
         const PROPAGANDA_LIB = ["La liberté triomphe !", "Démocratie sauvée.", "Nouvelle école ouverte.", "Presse libre !", "Raison victorieuse."];
         const PROPAGANDA_FAS = ["Ordre rétabli.", "Couvre-feu instauré.", "Opposition muselée.", "Sécurité nationale !", "Pouvoirs renforcés."];
-
-        const getPlayerPosition = (index, total) => {
-            const angle = (index / total) * 2 * Math.PI - Math.PI / 2;
-            const radius = 260;
-            return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
-        };
 
         const shuffleArray = (array) => {
             let currentIndex = array.length, randomIndex;
@@ -125,6 +127,12 @@
                 [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
             }
             return array;
+        };
+
+        const getPlayerPosition = (index, total) => {
+            const angle = (index / total) * 2 * Math.PI - Math.PI / 2;
+            const radius = 260;
+            return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
         };
 
         const callGemini = async (prompt, apiKey) => {
@@ -149,47 +157,122 @@
             return null;
         };
 
-        const Icon = ({ path, color="currentColor", size=24 }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{path}</svg>
-        );
-        const Icons = {
-            Bulb: () => <Icon color="#facc15" path={<path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/>} />,
-            X: () => <Icon color="#ef4444" path={<path d="M18 6 6 18M6 6l12 12"/>} />,
-            Book: () => <Icon path={<React.Fragment><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></React.Fragment>} />,
-            Radio: () => <Icon path={<React.Fragment><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></React.Fragment>} />,
-            Sparkles: () => <Icon color="#facc15" path={<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/>} />
-        };
-
+        // --- RÈGLES DÉTAILLÉES (COMPLETE ET RICHE) ---
         const RulesModal = ({ onClose }) => (
             <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4 fade-in">
-                <div className="bg-gray-800 border-2 border-gray-600 rounded-lg max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
-                    <div className="p-6 border-b border-gray-700 flex justify-between items-center bg-gray-900 rounded-t-lg">
-                        <h2 className="text-3xl font-title text-yellow-500 tracking-wider">RÈGLES DÉTAILLÉES</h2>
+                <div className="bg-gray-900 border-2 border-gray-600 rounded-lg max-w-5xl w-full max-h-[95vh] flex flex-col shadow-2xl text-gray-200">
+                    {/* HEADER */}
+                    <div className="p-6 border-b border-gray-700 flex justify-between items-center bg-gray-950 rounded-t-lg">
+                        <h2 className="text-3xl font-title text-yellow-500 tracking-wider">RÈGLEMENT OFFICIEL DÉTAILLÉ</h2>
                         <button onClick={onClose} className="text-gray-400 hover:text-white transition"><Icons.X /></button>
                     </div>
-                    <div className="p-8 overflow-y-auto text-gray-300 space-y-8 font-sans leading-relaxed text-sm md:text-base">
+                    
+                    {/* BODY */}
+                    <div className="p-8 overflow-y-auto font-sans leading-relaxed text-sm md:text-base space-y-10">
+                        
+                        {/* INTRODUCTION */}
+                        <div className="text-center italic text-gray-400 mb-6 border-b border-gray-800 pb-4">
+                            "L'année est 1932. Le lieu est l'Allemagne d'avant-guerre. Les joueurs sont des politiciens allemands tentant de maintenir un gouvernement libéral fragile ou d'installer un régime fasciste."
+                        </div>
+
+                        {/* 1. OBJECTIFS & VICTOIRE */}
                         <section>
-                            <h3 className="text-xl font-bold text-white mb-3 border-b border-gray-600 pb-1">🎯 OBJECTIFS & VICTOIRE</h3>
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <div className="bg-blue-900/30 p-4 rounded border border-blue-800/50">
-                                    <h4 className="font-bold text-blue-400 mb-2">LES LIBÉRAUX</h4>
-                                    <ul className="list-disc pl-5 space-y-1">
-                                        <li>Faire passer <strong>5 lois Libérales</strong>.</li>
-                                        <li>Ou <strong>assassiner Hitler</strong>.</li>
+                            <h3 className="text-2xl font-bold text-white mb-4 border-l-4 border-yellow-500 pl-3">🏆 1. CONDITIONS DE VICTOIRE</h3>
+                            <div className="grid md:grid-cols-2 gap-8">
+                                <div className="bg-blue-900/20 p-6 rounded-lg border border-blue-800/50">
+                                    <h4 className="font-bold text-blue-400 mb-3 text-xl border-b border-blue-800/30 pb-2">LES LIBÉRAUX (L'Équipe Bleue)</h4>
+                                    <p className="mb-3 text-sm text-gray-300">Les Libéraux sont majoritaires, mais ils ne savent pas qui est qui. Ils doivent apprendre à se faire confiance.</p>
+                                    <ul className="list-disc pl-5 space-y-2 text-gray-200">
+                                        <li><strong>Option A :</strong> Faire passer <strong>5 lois Libérales</strong> (Bleues).</li>
+                                        <li><strong>Option B :</strong> Assassiner <strong>Hitler</strong> (via le pouvoir d'exécution).</li>
                                     </ul>
                                 </div>
-                                <div className="bg-red-900/30 p-4 rounded border border-red-800/50">
-                                    <h4 className="font-bold text-red-500 mb-2">LES FASCISTES</h4>
-                                    <ul className="list-disc pl-5 space-y-1">
-                                        <li>Faire passer <strong>6 lois Fascistes</strong>.</li>
-                                        <li>Ou faire élire <strong>Hitler Chancelier</strong> (après la 3ème loi fasciste).</li>
+                                <div className="bg-red-900/20 p-6 rounded-lg border border-red-800/50">
+                                    <h4 className="font-bold text-red-500 mb-3 text-xl border-b border-red-800/30 pb-2">LES FASCISTES (L'Équipe Rouge)</h4>
+                                    <p className="mb-3 text-sm text-gray-300">Les Fascistes sont minoritaires, mais ils se connaissent et travaillent ensemble pour semer le chaos.</p>
+                                    <ul className="list-disc pl-5 space-y-2 text-gray-200">
+                                        <li><strong>Option A :</strong> Faire passer <strong>6 lois Fascistes</strong> (Rouges).</li>
+                                        <li><strong>Option B :</strong> Faire élire <strong>Hitler</strong> au poste de Chancelier, MAIS seulement après que 3 lois Fascistes ont déjà été votées.</li>
                                     </ul>
                                 </div>
                             </div>
                         </section>
+
+                        {/* 2. DÉROULEMENT DU TOUR */}
+                        <section>
+                            <h3 className="text-2xl font-bold text-white mb-4 border-l-4 border-yellow-500 pl-3">🔄 2. DÉROULEMENT D'UN TOUR</h3>
+                            <div className="space-y-6">
+                                <div>
+                                    <h4 className="font-bold text-yellow-100 text-lg mb-2">PHASE 1 : L'ÉLECTION</h4>
+                                    <ol className="list-decimal pl-5 text-gray-300 space-y-2">
+                                        <li>Le titre de <strong>Président</strong> passe au joueur suivant (sens des aiguilles d'une montre).</li>
+                                        <li>Le nouveau Président nomme un candidat au poste de <strong>Chancelier</strong>.</li>
+                                        <li>Tous les joueurs (y compris les candidats) votent <span className="text-green-400 font-bold">JA!</span> ou <span className="text-red-400 font-bold">NEIN!</span>.</li>
+                                        <li>Si le vote échoue (égalité ou majorité de NON) : Le titre de Président passe au suivant, et le compteur de "Chaos" augmente.</li>
+                                        <li>Si le vote réussit (majorité de OUI) : Le gouvernement est élu et on passe à la phase législative.</li>
+                                    </ol>
+                                </div>
+                                
+                                <div>
+                                    <h4 className="font-bold text-yellow-100 text-lg mb-2">PHASE 2 : SÉANCE LÉGISLATIVE</h4>
+                                    <ol className="list-decimal pl-5 text-gray-300 space-y-2">
+                                        <li>Le Président pioche <strong>3 cartes</strong> du paquet.</li>
+                                        <li>Il en jette secrètement <strong>1</strong> et passe les <strong>2</strong> restantes au Chancelier.</li>
+                                        <li>Le Chancelier reçoit 2 cartes, en jette secrètement <strong>1</strong>, et pose la dernière sur le plateau.</li>
+                                    </ol>
+                                    <p className="mt-2 text-sm text-gray-400 bg-gray-800 p-2 rounded"><em>Note importante : Les joueurs peuvent MENTIR sur les cartes qu'ils ont vues ou reçues. C'est le cœur du jeu.</em></p>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-bold text-yellow-100 text-lg mb-2">PHASE 3 : POUVOIR EXÉCUTIF</h4>
+                                    <p className="text-gray-300">Si une loi Fasciste est votée et qu'elle recouvre une case marquée d'un pouvoir, le Président DOIT utiliser ce pouvoir immédiatement.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* 3. POUVOIRS PRÉSIDENTIELS */}
+                        <section>
+                            <h3 className="text-2xl font-bold text-white mb-4 border-l-4 border-yellow-500 pl-3">⚡ 3. POUVOIRS PRÉSIDENTIELS</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-gray-800 p-4 rounded flex items-start gap-4">
+                                    <div className="text-3xl">🔍</div>
+                                    <div>
+                                        <strong className="text-yellow-400 block mb-1">INVESTIGATION</strong>
+                                        <span className="text-sm text-gray-300">Le Président choisit un joueur et regarde secrètement sa carte de parti (Libéral ou Fasciste). Il ne voit pas si c'est Hitler, juste le camp.</span>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-800 p-4 rounded flex items-start gap-4">
+                                    <div className="text-3xl">👔</div>
+                                    <div>
+                                        <strong className="text-yellow-400 block mb-1">ÉLECTION SPÉCIALE</strong>
+                                        <span className="text-sm text-gray-300">Le Président choisit qui sera le prochain Président (au lieu de suivre l'ordre du tour). Après ce tour spécial, l'ordre normal reprend là où il s'était arrêté.</span>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-800 p-4 rounded flex items-start gap-4">
+                                    <div className="text-3xl">👀</div>
+                                    <div>
+                                        <strong className="text-yellow-400 block mb-1">REGARD (POLICY PEEK)</strong>
+                                        <span className="text-sm text-gray-300">Le Président regarde secrètement les 3 prochaines cartes de la pioche. Utile pour savoir si le prochain gouvernement mentira.</span>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-800 p-4 rounded flex items-start gap-4 border border-red-900">
+                                    <div className="text-3xl">🔫</div>
+                                    <div>
+                                        <strong className="text-red-500 block mb-1">EXÉCUTION</strong>
+                                        <span className="text-sm text-gray-300">Le Président choisit un joueur à exécuter. Ce joueur est éliminé du jeu (ne vote plus, ne parle plus). <strong>Si Hitler est exécuté, les Libéraux gagnent immédiatement.</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        {/* FOOTER MESSAGE */}
+                        <div className="bg-yellow-900/20 p-4 rounded text-center text-gray-400 italic text-sm">
+                            "La seule chose nécessaire au triomphe du mal est que les hommes de bien ne fassent rien."
+                        </div>
+
                     </div>
-                    <div className="p-4 bg-gray-900 border-t border-gray-700 text-center rounded-b-lg">
-                        <button onClick={onClose} className="bg-yellow-600 hover:bg-yellow-500 text-black font-bold py-3 px-10 rounded text-lg transition shadow-lg transform hover:scale-105">RETOURNER AU JEU</button>
+                    {/* BUTTON */}
+                    <div className="p-6 bg-gray-950 border-t border-gray-700 text-center rounded-b-lg">
+                        <button onClick={onClose} className="bg-yellow-600 hover:bg-yellow-500 text-black font-bold py-4 px-16 rounded-full text-xl transition shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:scale-105">J'AI COMPRIS, LANCER LA PARTIE</button>
                     </div>
                 </div>
             </div>
@@ -478,27 +561,16 @@
 
             // --- CORRECTION CRITIQUE DU BUG "6 CARTES" (RESHUFFLE) ---
             const startLegislation = () => {
-                // Utilisation d'une variable locale pour manipuler le deck "en cours"
-                // car setDeck est asynchrone et ne met pas à jour 'deck' immédiatement.
                 let workingDeck = [...deck];
-
-                // Si le deck a moins de 3 cartes, on ne peut pas piocher.
-                // IL FAUT RECRÉER UN DECK TOUT DE SUITE DANS LA VARIABLE LOCALE.
                 if (workingDeck.length < 3) {
                     addLog("Remélange du deck (Défausse + Reste)...");
-                    // On recrée un deck frais basé sur les lois restantes à passer
-                    // (Ceci simule le mélange de la défausse + le reste du paquet)
                     let newDeck = Array(6 - libPolicies).fill("Liberal").concat(Array(11 - fasPolicies).fill("Fascist"));
                     workingDeck = shuffleArray(newDeck);
                 }
-
-                // Maintenant on pioche dans 'workingDeck' qui est garanti d'avoir assez de cartes
                 const draw = workingDeck.slice(0, 3);
                 const remaining = workingDeck.slice(3);
-
-                setDeck(remaining); // Mise à jour de l'état pour le prochain tour
+                setDeck(remaining);
                 setHand(draw);
-                
                 if (mode === "MULTI") {
                      setActivePlayerId(presidentId);
                      setShowPassScreen(true);
@@ -718,11 +790,29 @@
 
             if (mode === "START") {
                 return (
-                    <div onClick={initAudioAndEnter} className="flex h-screen items-center justify-center bg-black text-white cursor-pointer animate-start">
-                        <div className="text-center">
-                            <h1 className="text-6xl font-title text-red-600 mb-4">SECRET HITLER</h1>
-                            <p className="text-2xl">CLIQUEZ POUR LANCER L'EXPÉRIENCE</p>
+                    <div className="flex h-screen flex-col items-center justify-center bg-black text-white gap-10">
+                        {/* Zone Cliquable pour lancer */}
+                        <div onClick={initAudioAndEnter} className="text-center cursor-pointer animate-start group">
+                            <h1 className="text-6xl font-title text-red-600 mb-4 group-hover:scale-105 transition-transform">SECRET HITLER</h1>
+                            <p className="text-2xl group-hover:text-red-400 transition-colors">CLIQUEZ POUR LANCER L'EXPÉRIENCE</p>
                             <p className="text-sm text-gray-500 mt-4">(Activation Audio Requise)</p>
+                        </div>
+
+                        {/* Zone Input Clé API (Non cliquable pour le start) */}
+                        <div className="flex flex-col items-center gap-3 z-50 p-4 rounded-lg bg-gray-900/50 border border-gray-800" onClick={e => e.stopPropagation()}>
+                            <div className="flex flex-col items-center">
+                                <label className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Clé API Gemini (Optionnel)</label>
+                                <input 
+                                    type="text" 
+                                    value={userApiKey}
+                                    onChange={(e) => setUserApiKey(e.target.value)}
+                                    placeholder="Collez votre clé ici..." 
+                                    className="bg-black border border-gray-600 text-yellow-500 text-center text-sm px-4 py-2 rounded w-64 focus:border-yellow-500 focus:outline-none transition-colors"
+                                />
+                            </div>
+                            <p className="text-[9px] text-gray-500 max-w-[250px] text-center">
+                                Laissez vide pour jouer normalement. Avec une clé, l'IA génère des récits uniques.
+                            </p>
                         </div>
                     </div>
                 );
